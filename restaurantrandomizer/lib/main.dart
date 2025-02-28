@@ -1,14 +1,12 @@
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
-import 'package:flutter_config/flutter_config.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'dart:math';
 
 Future<void> main() async{
-  WidgetsFlutterBinding.ensureInitialized(); // Required by FlutterConfig
-  await FlutterConfig.loadEnvVariables(); 
   await dotenv.load(fileName: ".env"); // Load environment variables
 
   runApp(const MyApp());
@@ -49,6 +47,7 @@ class _RestaurantFinderState extends State<RestaurantFinder> {
   final TextEditingController _searchController = TextEditingController();
   final List<Map<String, dynamic>> _restaurants = [];
   bool _isLoading = false;
+  Color _buttonColor = Colors.white;
 
   // Creates Google Maps View
   Future<void> _onMapCreated(GoogleMapController controller) async {
@@ -149,7 +148,7 @@ class _RestaurantFinderState extends State<RestaurantFinder> {
     }
   }
 
-  void _onMapLongPress(LatLng position) {
+  void _updateSearchRadius(LatLng position) {
 
     // Set State Callback Function
     setState(() {
@@ -199,101 +198,188 @@ class _RestaurantFinderState extends State<RestaurantFinder> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Find a Restaurant'),
-        elevation: 2,
-      ),
-      body: Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: TextField(
-              onSubmitted: (String value) async {_searchLocationAndRestaurants(value);},
-              controller: _searchController,
-              decoration: InputDecoration(
-                hintText: 'Search for location',
-                suffixIcon: IconButton(
-                  icon: const Icon(Icons.search),
-                  onPressed: () => _searchLocationAndRestaurants(_searchController.text),
-                ),
-              ),
-            ),
-          ),
-          Slider(
-            value: _radius,
-            min: 1000,
-            max: 10000,
-            divisions: 15,
-            label: '${(_radius / 1000).toStringAsFixed(1)} km',
-            onChanged: (value) => setState(() => _radius = value),
-          ),
-          // Expanded to prevent infinite height issues
-          Expanded(
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start, // Prevent unbounded height
-              children: [
-                // Google Map - Set height properly
-                Expanded(
-                  child: SizedBox(
-                    height: 400, // ✅ Define a proper height
-                    child: _isLoading
-                        ? const Center(child: CircularProgressIndicator())
-                        : GoogleMap(
-                            onMapCreated: _onMapCreated,
-                            initialCameraPosition: CameraPosition(
-                              target: _currentLocation,
-                              zoom: 12,
-                            ),
-                            markers: _markers.values.toSet(),
-                            onLongPress: _onMapLongPress,
-                            circles: {
-                              Circle(
-                                circleId: const CircleId('radius'),
-                                center: _currentLocation,
-                                radius: _radius,
-                                fillColor: Colors.blue.withOpacity(0.1),
-                                strokeColor: Colors.blue,
-                              ),
-                            },
-                          ),
-                  ),
-                ),
-
-                // Restaurant List - Use Flexible to allow resizing
-                Flexible(
-                  child: _restaurants.isEmpty
-                      ? const Center(child: Text('No restaurants found'))
-                      : ListView.builder(
-                          itemCount: _restaurants.length,
-                          itemBuilder: (context, index) {
-                            final restaurant = _restaurants[index];
-                            return ListTile(
-                              leading: CircleAvatar(child: Text('${index + 1}')),
-                              title: Text(restaurant['name']),
-                              subtitle: Text(
-                                'Rating: ${restaurant['rating']}, Price: ${restaurant['price_level']}\n'
-                                'Cuisine: ${restaurant['types']}',
-                              ),
-                            );
-                          },
-                        ),
-                ),
-              ],
-            ),
-          ),
-
-          // Pick a Random Restaurant Button
-          if (_restaurants.isNotEmpty)
+        appBar: AppBar(
+          title: const Text('Find a Restaurant'),
+          elevation: 2,
+        ),
+        body: Column(
+          children: [
+            // The Top Search Bar and Slider
             Padding(
               padding: const EdgeInsets.all(8.0),
-              child: ElevatedButton(
-                onPressed: _randomRestaurantSelection,
-                child: const Text('Pick a Restaurant'),
+              child: TextField(
+                onSubmitted: (String value) async {_searchLocationAndRestaurants(value);},
+                controller: _searchController,
+                decoration: InputDecoration(
+                  hintText: 'Search for location',
+                  suffixIcon: IconButton(
+                    icon: const Icon(Icons.search),
+                    onPressed: () => _searchLocationAndRestaurants(_searchController.text),
+                  ),
+                ),
               ),
             ),
+            Slider(
+              value: _radius,
+              min: 1000,
+              max: 10000,
+              divisions: 15,
+              label: '${(_radius / 1000).toStringAsFixed(1)} km',
+              onChanged: (value) => setState(() {
+                _radius = value;
+                _updateSearchRadius(_currentLocation);
+              }),
+            ),
+            // Expanded to prevent infinite height issues
+            Expanded(
+              child:
+              // Layout Builder to conditionally render as a column or row depending on max width 
+              LayoutBuilder(
+                builder: (context,constraints){
+                  bool isWideScreen = constraints.maxWidth > 600;
+                  return isWideScreen ?
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start, // Prevent unbounded height
+                      children: [
+                        // Google Map - Set height properly
+                        Expanded(
+                          child: SizedBox(
+                            child: _isLoading
+                                ? const Center(child: CircularProgressIndicator())
+                                : GoogleMap(
+                                    onMapCreated: _onMapCreated,
+                                    initialCameraPosition: CameraPosition(
+                                      target: _currentLocation,
+                                      zoom: 12,
+                                    ),
+                                    markers: _markers.values.toSet(),
+                                    onTap: (LatLng tappedLocation){ _updateSearchRadius(tappedLocation);},
+                                    onLongPress:(LatLng tappedLocation){ _updateSearchRadius(tappedLocation);},
+                                    
+                                    circles: {
+                                      Circle(
+                                        circleId: const CircleId('radius'),
+                                        center: _currentLocation,
+                                        radius: _radius,
+                                        fillColor: Colors.blue.withOpacity(0.1),
+                                        strokeColor: Colors.blue,
+                                        consumeTapEvents: false,
+                                      ),
+                                    },
+                                  ),
+                          ),
+                        ),
+
+                        // Restaurant List - Use Flexible to allow resizing
+                        Expanded(
+                          child: _restaurants.isEmpty
+                              ? const Center(child: Text('No restaurants found'))
+                              : ListView.builder(
+                                  itemCount: _restaurants.length,
+                                  itemBuilder: (context, index) {
+                                    final restaurant = _restaurants[index];
+                                    return ListTile(
+                                      
+                                      leading: CircleAvatar(child: Text('${index + 1}')),
+                                      title: Text(restaurant['name']),
+                                      subtitle: Text(
+                                        'Rating: ${restaurant['rating']}, Price: ${restaurant['price_level']}\n'
+                                        'Cuisine: ${restaurant['types']}',
+                                      ),
+                                    );
+                                  },
+                                ),
+                        ),
+                      ],
+                    ) 
+                    :
+                    Column(
+                      children: [
+                        // Google Maps
+                        SizedBox(
+                          height: 400, // ✅ Define a proper height
+                          child: _isLoading
+                              ? const Center(child: CircularProgressIndicator())
+                              : GoogleMap(
+                                  onMapCreated: _onMapCreated,
+                                  initialCameraPosition: CameraPosition(
+                                    target: _currentLocation,
+                                    zoom: 12,
+                                  ),
+                                  markers: _markers.values.toSet(),
+                                  onTap: (LatLng tappedLocation){ _updateSearchRadius(tappedLocation);},
+                                  onLongPress:(LatLng tappedLocation){ _updateSearchRadius(tappedLocation);},
+                                  circles: {
+                                    Circle(
+                                      circleId: const CircleId('radius'),
+                                      center: _currentLocation,
+                                      radius: _radius,
+                                      fillColor: Colors.blue.withOpacity(0.1),
+                                      strokeColor: Colors.blue,
+                                      consumeTapEvents: false
+                                    ),
+                                  },
+                                ),
+                        ),
+                      
+                        // Restaurant List - Use Flexible to allow resizing
+                        Flexible(
+                          child: _restaurants.isEmpty
+                              ? const Center(child: Text('No restaurants found'))
+                              : ListView.builder(
+                                  itemCount: _restaurants.length,
+                                  itemBuilder: (context, index) {
+                                    final restaurant = _restaurants[index];
+                                    return ListTile(
+                                      leading: CircleAvatar(child: Text('${index + 1}')),
+                                      title: Text(restaurant['name']),
+                                      subtitle: Text(
+                                        'Rating: ${restaurant['rating']}, Price: ${restaurant['price_level']}\n'
+                                        'Cuisine: ${restaurant['types']}',
+                                      ),
+                                    );
+                                  },
+                                ),
+                        ),
+                                
+                        ],
+                    );  
+                }
+              ),
+            
+            ),
+          
+            // Random Restaurant Button (Rendered only if restaurants exist)
+            if (_restaurants.isNotEmpty)
+              Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: MouseRegion(
+                  onEnter: (_) {
+                    // Change color when hovered
+                    setState(() {
+                      _buttonColor = Colors.green; // Change to green when hovered
+                    });
+                  },
+                  onExit: (_) {
+                    // Reset color when not hovered
+                    setState(() {
+                      _buttonColor = Colors.white; // Or any other default color
+                    });
+                  },
+                  child: ElevatedButton(
+                    style: ButtonStyle(
+                      backgroundColor: WidgetStateProperty.all(_buttonColor), // Use the color that changes on hover
+                      padding: WidgetStateProperty.all(const EdgeInsets.symmetric(horizontal: 75, vertical: 40)), // Increase padding to make it bigger
+                      textStyle: WidgetStateProperty.all(const TextStyle(fontSize: 25)), // Adjust font size
+                    ),
+                    onPressed: _randomRestaurantSelection,
+                    child: const Text('Pick a Restaurant'),
+                  ),
+                ),
+              ),
           ],
-      ),
-    );
+        ),
+      );
   }
 
 }

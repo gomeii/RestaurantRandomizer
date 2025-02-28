@@ -31,8 +31,37 @@
 
   <title>restaurantrandomizer</title>
   <link rel="manifest" href="manifest.json">
-  <script src="https://maps.googleapis.com/maps/api/js?key=<<GOOGLE_MAPS_API_KEY>>"></script>
-  <script src="https://maps.googleapis.com/maps/api/js?key=<<GOOGLE_MAPS_API_KEY>>&libraries=drawing"></script>
+
+  <script src=".env.js"></script>
+  
+  <!-- Load Google Maps API dynamically -->
+  <script>
+    window.addEventListener("load", function () {
+      if (window.env && window.env.GOOGLE_MAPS_API_KEY) {
+        const script = document.createElement("script");
+        script.src = `https://maps.googleapis.com/maps/api/js?key=${window.env.GOOGLE_MAPS_API_KEY}`;
+        script.async = true;
+        script.defer = true;
+        document.head.appendChild(script);
+      } else {
+        console.error("⚠️ Google Maps API Key not found in env.js");
+      }
+    });
+  </script>
+  <script>
+    window.addEventListener("load", function () {
+      if (window.env && window.env.GOOGLE_MAPS_API_KEY) {
+        const script = document.createElement("script");
+        script.src = `https://maps.googleapis.com/maps/api/js?key=${window.env.GOOGLE_MAPS_API_KEY}&libraries=drawing`;
+        script.async = true;
+        script.defer = true;
+        document.head.appendChild(script);
+      } else {
+        console.error("⚠️ Google Maps API Key not found in env.js");
+      }
+    });
+  </script>
+
 </head>
 <body>
   <script src="flutter_bootstrap.js" async></script>

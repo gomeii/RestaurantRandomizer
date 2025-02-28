@@ -53,5 +53,10 @@ app.*.map.json
 /android/app/profile
 /android/app/release
 
+/android/gradle.properties
+/ios/Runner/GoogleMaps-Info.plist
+/web/.env.js
 .env
 /assets/locations.json
+
+.vscode/
