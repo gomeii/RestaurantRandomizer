@@ -2,6 +2,7 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:flutter_fortune_wheel/flutter_fortune_wheel.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'dart:math';
@@ -168,32 +169,61 @@ class _RestaurantFinderState extends State<RestaurantFinder> {
   // Calls Random Restaurant Dialog Box
   void _randomRestaurantSelection() {
     if (_restaurants.isNotEmpty) {
-      final randomIndex = Random().nextInt(_restaurants.length);
+      // Convert Restaurants to Fortune Wheel Items
+      List<FortuneItem> _convertedFortuneItems = _restaurants.map((restaurant) {
+        return FortuneItem(
+          child: Text(restaurant['name'], style: TextStyle(color:Colors.white)),
+          style: FortuneItemStyle(
+            color: Colors.blueAccent,
+            borderWidth: 2,
+            borderColor:Colors.white,
+          ),
+        );        
+        }).toList();
+      // Select Random Index from the list
+      final randomIndex = Random().nextInt(_convertedFortuneItems.length);
       final selectedRestaurant = _restaurants[randomIndex];
-
+      
       showDialog(
         context: context,
-        builder: (context) => AlertDialog(
-          title: const Text('Random Restaurant'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text('Name: ${selectedRestaurant['name']}'),
-              Text('Address: ${selectedRestaurant['vicinity']}'),
-              Text('Rating: ${selectedRestaurant['rating']}'),
-              Text('Price Level: ${selectedRestaurant['price_level']}'),
-              Text('Cuisine: ${selectedRestaurant['types']}'),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('OK'),
-            ),
-          ],
-        ),
+        builder: (context) {
+        return FortuneWheel(
+          items: _convertedFortuneItems,
+          selected: Stream.value(randomIndex),
+          onAnimationEnd:() {
+            showDialog(
+              context: context,
+              builder: (context) {
+                return AlertDialog(
+                  title: const Text('Random Restaurant'),
+                  content: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('Name: ${selectedRestaurant['name']}'),
+                      Text('Address: ${selectedRestaurant['vicinity']}'),
+                      Text('Rating: ${selectedRestaurant['rating']}'),
+                      Text('Price Level: ${selectedRestaurant['price_level']}'),
+                      Text('Cuisine: ${selectedRestaurant['types']}'),
+                    ],
+                  ),
+                  actions: [
+                    TextButton(
+                      onPressed: () {
+                        // Close both dialogs
+                        Navigator.of(context).pop(); // Close the restaurant details dialog
+                        Navigator.of(context).pop(); // Close the FortuneWheel dialog
+                      },
+                      child: const Text('OK'),
+                    ),
+                  ],
+                );
+              },
+            );
+          },);
+        },
       );
+
     }
   }
 
