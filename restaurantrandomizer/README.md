@@ -1,6 +1,23 @@
 # restaurantrandomizer
 
-A new Flutter project.
+Flutter Project for Nearby Restaurant Randomized Selection.
+ 
+# Configuring Project
+
+TODO: Add Steps or instructions for how to set up environment files for android, ios, web
+TODO: Add Steps for procuring Google Maps API Key
+
+# Running the Project
+
+To run the project in development mode is very easy just use the command:
+
+`flutter run`
+
+and select your target device
+
+# Example Use 
+
+[![Watch the video]](https://raw.githubusercontent.com/gomeii/RestaurantRandomizer/main/RestaurantRandomizerExampleWithWheel.mp4)
 
 ## Getting Started
 
