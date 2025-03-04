@@ -16,8 +16,7 @@ To run the project in development mode is very easy just use the command:
 and select your target device
 
 # Example Use 
-
-https://github.com/user-attachments/assets/e8e74142-cc6e-4ef4-97eb-1203e1bb6047
+![SmallerExample480p](https://github.com/user-attachments/assets/a5612f6c-6ec2-4d13-9ccb-e3a357684114)
 
 ## Getting Started
 
