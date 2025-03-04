@@ -17,11 +17,15 @@ and select your target device
 
 # Example Use 
 
-[![Watch the video]](https://raw.githubusercontent.com/gomeii/RestaurantRandomizer/main/RestaurantRandomizerExampleWithWheel.mp4)
+https://github.com/user-attachments/assets/e8e74142-cc6e-4ef4-97eb-1203e1bb6047
 
 ## Getting Started
 
 This project is a starting point for a Flutter application.
+
+
+
+
 
 A few resources to get you started if this is your first Flutter project:
 
