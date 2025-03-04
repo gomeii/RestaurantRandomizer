@@ -5,20 +5,34 @@ Flutter Project for Nearby Restaurant Randomized Selection.
 # Configuring Project
 
 TODO: Add Steps or instructions for how to set up environment files for android, ios, web
+
 TODO: Add Steps for procuring Google Maps API Key
+
+# PreRequisites for Running Project
+
+1. Install Flutter SDK to your machine
+2. Set Flutter SDK to your PATH 
+
+Instructions for this [located here](https://medium.com/@blup-tool/step-by-step-guide-to-installing-flutter-and-dart-on-windows-b30a631e7583)
 
 # Running the Project
 
-To run the project in development mode is very easy just use the command:
+To run the project in development mode:
 
-`flutter run`
+1. Go into `restaurantrandomizer` directory
 
-and select your target device
+2. Clean any old build artifacts by using command `flutter clean`
+
+3. Resolve any package dependencies by using command `flutter pub get`
+
+4. Run the application by using command `flutter run`
+
+5. You will then be prompted to select target device
 
 # Example Use 
 
-[![Watch the video](https://raw.githubusercontent.com/gomeii/RestaurantRandomizer/main/RestaurantRandomizerExampleWithWheel.mp4)
-RestaurantRandomizerExampleWithWheel.mp4
+<!-- [![Watch the video](https://raw.githubusercontent.com/gomeii/RestaurantRandomizer/main/RestaurantRandomizerExampleWithWheel.mp4)
+RestaurantRandomizerExampleWithWheel.mp4 -->
 ## Getting Started
 
 This project is a starting point for a Flutter application.

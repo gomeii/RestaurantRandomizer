@@ -1,8 +1,9 @@
-import 'package:flutter/gestures.dart';
+// import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:flutter_fortune_wheel/flutter_fortune_wheel.dart';
+import 'package:filter_list/filter_list.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'dart:math';
@@ -47,6 +48,8 @@ class _RestaurantFinderState extends State<RestaurantFinder> {
   double _radius = 5000;
   final TextEditingController _searchController = TextEditingController();
   final List<Map<String, dynamic>> _restaurants = [];
+  List<Map<String, dynamic>> _filteredRestaurants = [];
+  Set<String> _selectedFilters = {};
   bool _isLoading = false;
   Color _buttonColor = Colors.white;
 
@@ -77,6 +80,9 @@ class _RestaurantFinderState extends State<RestaurantFinder> {
           _mapController.animateCamera(CameraUpdate.newLatLng(_currentLocation));
           // Now search for restaurants within the new radius
           await _searchRestaurants();
+
+          // Reapply filters to new restaurants
+          _applyFilters();
 
         } else {
           print('Location not found. Query: $searchQuery');
@@ -133,12 +139,15 @@ class _RestaurantFinderState extends State<RestaurantFinder> {
             // Add restaurant details to the list
             _restaurants.add({
               'name': result['name'],
+              'position': [ result['geometry']['location']['lat'], result['geometry']['location']['lng'] ],
               'vicinity': result['vicinity'],
               'price_level': result['price_level'] ?? 'N/A',
               'rating': result['rating'] ?? 'N/A',
               'types': result['types'].join(', '),
             });
 
+            _applyFilters();
+     
           }
         });
 
@@ -151,6 +160,7 @@ class _RestaurantFinderState extends State<RestaurantFinder> {
     }
   }
 
+  // Update Search Radius callback function (Changes to position location, or changes in radius size)
   void _updateSearchRadius(LatLng position) {
 
     // Set State Callback Function
@@ -163,14 +173,82 @@ class _RestaurantFinderState extends State<RestaurantFinder> {
         icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueRed),
       );
       _searchRestaurants();
+
+    });
+  }
+  
+  // Update Marker to Filtered Restaurants
+  void _updateMarkers() {
+    setState(() {
+      _markers.clear(); // Clear existing markers
+      for (var restaurant in _filteredRestaurants) {
+        final position = LatLng(
+          restaurant['position'][0], 
+          restaurant['position'][1]
+        );
+        final marker =  Marker(
+              markerId: MarkerId(restaurant['name']),
+              position: position,
+              infoWindow: InfoWindow(
+                title: restaurant['name'],
+                snippet: restaurant['vicinity'],
+              ),
+            );
+        _markers[restaurant['name']] = marker;
+      }
+    });
+}
+
+  // Sets _filteredRestaurants based on passed in category
+  // Calling this function toggles the category on or off
+  void _filterRestaurants(String category) {
+    setState(() {
+      // Toggle selection
+      if (_selectedFilters.contains(category)) {
+        _selectedFilters.remove(category);
+      } else {
+        _selectedFilters.add(category);
+      }
+
+      // Apply filters
+      if (_selectedFilters.isEmpty) {
+        _filteredRestaurants = _restaurants; // Show all restaurants
+      } else {
+        _filteredRestaurants = _restaurants
+            .where((restaurant) =>
+                _selectedFilters.any((filter) => restaurant['types'].contains(filter)))
+            .toList();
+      }
+
+      // Update map markers
+      _updateMarkers();
     });
   }
 
+
+  void _applyFilters() {
+
+    setState(() {
+      _filteredRestaurants.clear();
+      List<String> filterList = _selectedFilters.toList();
+      if (filterList.isEmpty) {
+        _filteredRestaurants = List.from(_restaurants);
+      } else {
+        _filteredRestaurants = _restaurants
+            .where((restaurant) =>
+                filterList.any((category) => restaurant['types'].contains(category)))
+            .toList();
+            
+        _updateMarkers();
+      }
+    });
+  }
+  
   // Calls Random Restaurant Dialog Box
   void _randomRestaurantSelection() {
-    if (_restaurants.isNotEmpty) {
+    if (_filteredRestaurants.isNotEmpty && _filteredRestaurants.length > 1) {
       // Convert Restaurants to Fortune Wheel Items
-      List<FortuneItem> _convertedFortuneItems = _restaurants.map((restaurant) {
+      List<FortuneItem> _convertedFortuneItems = _filteredRestaurants.map((restaurant) {
         return FortuneItem(
           child: Text(restaurant['name'], style: TextStyle(color:Colors.white)),
           style: FortuneItemStyle(
@@ -182,7 +260,7 @@ class _RestaurantFinderState extends State<RestaurantFinder> {
         }).toList();
       // Select Random Index from the list
       final randomIndex = Random().nextInt(_convertedFortuneItems.length);
-      final selectedRestaurant = _restaurants[randomIndex];
+      final selectedRestaurant = _filteredRestaurants[randomIndex];
       
       showDialog(
         context: context,
@@ -227,6 +305,65 @@ class _RestaurantFinderState extends State<RestaurantFinder> {
     }
   }
 
+
+  void openFilterDialog() async {
+    Set<String> uniqueCuisines = {};
+    for (var restaurant in _restaurants) {
+      List<String> cuisines = restaurant['types'].split(', ');
+      uniqueCuisines.addAll(cuisines);
+    }
+    List<String> cuisineList = uniqueCuisines.toList();
+
+     await FilterListDialog.display<String>(
+      context,
+      listData: cuisineList,
+      selectedListData: _selectedFilters.toList(),
+      choiceChipLabel: (cuisine) => cuisine!,
+      validateSelectedItem: (list, val) => list!.contains(val),
+      onItemSearch: (cuisine, query) => cuisine!.toLowerCase().contains(query.toLowerCase()),
+      onApplyButtonClick: (selectedList) {
+        if (selectedList != null) {
+          setState(() {
+            _selectedFilters = selectedList.toSet();
+          });
+          _applyFilters(); // ✅ Call here
+          for (String filter in _selectedFilters){
+            _filterRestaurants(filter);
+          }
+        }
+        Navigator.pop(context);
+      },
+    );
+  }
+
+  Widget _buildFilterButton(String display, String category) {
+    return ElevatedButton(
+      onPressed: () {
+        _filterRestaurants(category);
+      },
+      onLongPress: () {
+        _filterRestaurants(category);
+      },
+      style: ElevatedButton.styleFrom(
+        backgroundColor: _selectedFilters.contains(category)
+            ? Colors.blue // Darker color for selected
+            : Colors.blueGrey, // Default color
+        foregroundColor: Colors.white,
+      ),
+      child: GestureDetector(
+        onTap: () => {
+          print("Quick filter tapped!"),
+          // You can perform any additional actions here.
+          _filterRestaurants(category)
+        },
+        child: Container(
+          padding: EdgeInsets.symmetric(vertical: 8.0, horizontal: 5),
+          child: Text(display),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -251,16 +388,35 @@ class _RestaurantFinderState extends State<RestaurantFinder> {
                 ),
               ),
             ),
-            Slider(
-              value: _radius,
-              min: 1000,
-              max: 10000,
-              divisions: 20,
-              label: '${(_radius / 1000).toStringAsFixed(1)} mi',
-              onChanged: (value) => setState(() {
-                _radius = value;
-                _updateSearchRadius(_currentLocation);
-              }),
+            Row(
+              children: [
+                // Radius Slider
+                Expanded(
+                  child: Slider(
+                    value: _radius,
+                    min: 1000,
+                    max: 10000,
+                    divisions: 10,
+                    label: '${(_radius / 1000).toStringAsFixed(1)} mi',
+                    onChanged: (value) => setState(() {
+                      _radius = value;
+                      _updateSearchRadius(_currentLocation);
+                    }),
+                  ),
+                ),
+
+                Wrap(
+                  spacing: 8.0, // Space between buttons
+                  children: [
+                    _buildFilterButton("Takeout",'meal_takeaway'),
+                    _buildFilterButton("Cafe",'cafe'),
+                    ElevatedButton(
+                      onPressed: openFilterDialog,
+                      child: Icon(Icons.add),
+                    ),
+                  ],
+                ),
+              ],
             ),
             // Expanded to prevent infinite height issues
             Expanded(
@@ -285,6 +441,7 @@ class _RestaurantFinderState extends State<RestaurantFinder> {
                                       target: _currentLocation,
                                       zoom: 12,
                                     ),
+                                    myLocationButtonEnabled: false,
                                     markers: _markers.values.toSet(),
                                     onTap: (LatLng tappedLocation){ _updateSearchRadius(tappedLocation);},
                                     onLongPress:(LatLng tappedLocation){ _updateSearchRadius(tappedLocation);},
@@ -305,12 +462,12 @@ class _RestaurantFinderState extends State<RestaurantFinder> {
 
                         // Restaurant List - Use Flexible to allow resizing
                         Expanded(
-                          child: _restaurants.isEmpty
+                          child: _filteredRestaurants.isEmpty
                               ? const Center(child: Text('No restaurants found'))
                               : ListView.builder(
-                                  itemCount: _restaurants.length,
+                                  itemCount: _filteredRestaurants.length,
                                   itemBuilder: (context, index) {
-                                    final restaurant = _restaurants[index];
+                                    final restaurant = _filteredRestaurants[index];
                                     return ListTile(
                                       
                                       leading: CircleAvatar(child: Text('${index + 1}')),
@@ -357,12 +514,12 @@ class _RestaurantFinderState extends State<RestaurantFinder> {
                       
                         // Restaurant List - Use Flexible to allow resizing
                         Flexible(
-                          child: _restaurants.isEmpty
+                          child: _filteredRestaurants.isEmpty
                               ? const Center(child: Text('No restaurants found'))
                               : ListView.builder(
-                                  itemCount: _restaurants.length,
+                                  itemCount: _filteredRestaurants.length,
                                   itemBuilder: (context, index) {
-                                    final restaurant = _restaurants[index];
+                                    final restaurant = _filteredRestaurants[index];
                                     return ListTile(
                                       leading: CircleAvatar(child: Text('${index + 1}')),
                                       title: Text(restaurant['name']),
@@ -383,7 +540,7 @@ class _RestaurantFinderState extends State<RestaurantFinder> {
             ),
           
             // Random Restaurant Button (Rendered only if restaurants exist)
-            if (_restaurants.isNotEmpty)
+            if (_filteredRestaurants.isNotEmpty)
               Padding(
                 padding: const EdgeInsets.all(8.0),
                 child: MouseRegion(
