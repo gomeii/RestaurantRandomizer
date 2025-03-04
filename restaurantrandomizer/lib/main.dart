@@ -225,8 +225,8 @@ class _RestaurantFinderState extends State<RestaurantFinder> {
               value: _radius,
               min: 1000,
               max: 10000,
-              divisions: 15,
-              label: '${(_radius / 1000).toStringAsFixed(1)} km',
+              divisions: 20,
+              label: '${(_radius / 1000).toStringAsFixed(1)} mi',
               onChanged: (value) => setState(() {
                 _radius = value;
                 _updateSearchRadius(_currentLocation);
@@ -237,8 +237,9 @@ class _RestaurantFinderState extends State<RestaurantFinder> {
               child:
               // Layout Builder to conditionally render as a column or row depending on max width 
               LayoutBuilder(
-                builder: (context,constraints){
+                builder: (context, constraints){
                   bool isWideScreen = constraints.maxWidth > 600;
+                  double TwoThirdsHeight = constraints.maxHeight/ 3 * 2; 
                   return isWideScreen ?
                     Row(
                       crossAxisAlignment: CrossAxisAlignment.start, // Prevent unbounded height
@@ -299,7 +300,7 @@ class _RestaurantFinderState extends State<RestaurantFinder> {
                       children: [
                         // Google Maps
                         SizedBox(
-                          height: 400, // ✅ Define a proper height
+                          height: TwoThirdsHeight,// ✅ Define a proper height
                           child: _isLoading
                               ? const Center(child: CircularProgressIndicator())
                               : GoogleMap(
