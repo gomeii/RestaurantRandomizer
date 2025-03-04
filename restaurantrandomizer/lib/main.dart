@@ -99,7 +99,9 @@ class _RestaurantFinderState extends State<RestaurantFinder> {
     try {
       
       final response = await http.get(Uri.parse(url));
-
+      if (response.statusCode != 200) {
+        print('Error: ${response.statusCode}, ${response.body}');
+      }
       if (response.statusCode == 200) {
         // Decodes the HTTP Response from Google Maps API
         final Map<String, dynamic> data = json.decode(response.body);

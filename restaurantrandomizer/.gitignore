@@ -58,3 +58,6 @@ app.*.map.json
 /web/.env.js
 .env
 /assets/locations.json
+
+*/*/generated_plugin*
+flutter

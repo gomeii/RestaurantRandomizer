@@ -5,14 +5,28 @@ plugins {
     id "dev.flutter.flutter-gradle-plugin"
 }
 
+import java.util.Properties
+
+// Function to load the .env file
+def loadEnvProperties() {
+    def envFile = rootProject.file('.env')
+    def properties = new Properties()
+    if (envFile.exists()) {
+        envFile.withReader('UTF-8') { reader ->
+            properties.load(reader)
+        }
+    }
+    return properties
+}
+
+// Load environment properties
+def envProperties = loadEnvProperties()
+
 android {
     namespace = "com.example.restaurantrandomizer"
-    compileSdk = 35
+    compileSdkVersion = 35
     ndkVersion = flutter.ndkVersion
 
-    buildFeatures {
-        buildConfig = true
-    }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_1_8
         targetCompatibility = JavaVersion.VERSION_1_8
@@ -27,19 +41,17 @@ android {
         applicationId = "com.example.restaurantrandomizer"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
-        minSdk = 21
-        targetSdk = flutter.targetSdkVersion
+        minSdkVersion = flutter.minSdkVersion
+        targetSdkVersion = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
 
         // Load API Key from gradle.properties
-        manifestPlaceholders["API_KEY"] = MAPS_API_KEY
-        // Inject the API key from local.properties into the manifest placeholder
-        // manifestPlaceholders = [
-        //     applicationName: "com.example.restaurantrandomizer",  // Replace with your custom Application class
-        //     API_KEY: (project.hasProperty('MAPS_API_KEY') ? project.MAPS_API_KEY : "")
-        // ]
+        manifestPlaceholders["API_KEY"] = envProperties.getProperty("GOOGLE_MAPS_API_KEY", "")
+    }
 
+    buildFeatures {
+        viewBinding = true
     }
 
     buildTypes {
