@@ -31,8 +31,13 @@ To run the project in development mode:
 
 # Example Use 
 
+<<<<<<< HEAD
 <!-- [![Watch the video](https://raw.githubusercontent.com/gomeii/RestaurantRandomizer/main/RestaurantRandomizerExampleWithWheel.mp4)
 RestaurantRandomizerExampleWithWheel.mp4 -->
+=======
+[![Watch the video](https://raw.githubusercontent.com/gomeii/RestaurantRandomizer/main/restaurantrandomizer/RestaurantRandomizerExampleWithWheel.mp4)
+RestaurantRandomizerExampleWithWheel.mp4
+>>>>>>> 583bc75b4794c4012a9cac5c31bc0b5767d9facc
 ## Getting Started
 
 This project is a starting point for a Flutter application.
