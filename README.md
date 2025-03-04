@@ -31,13 +31,8 @@ To run the project in development mode:
 
 # Example Use 
 
-<<<<<<< HEAD
-<!-- [![Watch the video](https://raw.githubusercontent.com/gomeii/RestaurantRandomizer/main/RestaurantRandomizerExampleWithWheel.mp4)
-RestaurantRandomizerExampleWithWheel.mp4 -->
-=======
-[![Watch the video](https://raw.githubusercontent.com/gomeii/RestaurantRandomizer/main/restaurantrandomizer/RestaurantRandomizerExampleWithWheel.mp4)
-RestaurantRandomizerExampleWithWheel.mp4
->>>>>>> 583bc75b4794c4012a9cac5c31bc0b5767d9facc
+![SmallerExample480p](https://github.com/user-attachments/assets/6638ce3c-b6d6-4741-960f-6744cc0b232a)
+
 ## Getting Started
 
 This project is a starting point for a Flutter application.
