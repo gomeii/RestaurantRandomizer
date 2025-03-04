@@ -17,7 +17,7 @@ and select your target device
 
 # Example Use 
 
-[![Watch the video]](RestaurantRandomizerExampleWithWheel.mp4)
+[![Watch the video]](https://raw.githubusercontent.com/gomeii/RestaurantRandomizer/main/RestaurantRandomizerExampleWithWheel.mp4)
 
 ## Getting Started
 
